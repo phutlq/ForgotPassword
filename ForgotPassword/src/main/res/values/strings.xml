@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ForgostPassword</string>
+    <string name="hint"><b>Email</b></string>
+</resources>
