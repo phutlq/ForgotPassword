@@ -1,11 +1,13 @@
 package com.example.pc.forgostpassword.ui;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -15,6 +17,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.pc.forgostpassword.R;
+import com.example.pc.forgostpassword.ui.network.NetworkRequest;
+import com.example.pc.forgostpassword.ui.network.RestAPI;
+import com.example.pc.forgostpassword.ui.network.RestAPIBuilder;
 
 import rx.Subscription;
 
@@ -31,6 +36,10 @@ public class ForgotPassword extends FrameLayout {
     private RelativeLayout mButtonForgot,mBackground;
 
     private ImageView mImageButtonBack, mImageButtonNext,mImageButtonNextBackground;
+
+    private ProgressDialog mProgressDialog;
+
+    private Subscription mGetPostSubscription;
 
 
     public ForgotPassword(Context context) {
@@ -125,12 +134,12 @@ public class ForgotPassword extends FrameLayout {
     }
 
     public void setButtonBackIcon(int icon) {
-        mImageButtonBack.setImageResource(icon);
+        mImageButtonBack.setBackgroundResource(icon);
         mImageButtonBack.setScaleType(ImageView.ScaleType.FIT_XY);
     }
 
     public void setButtonNextIcon(int icon) {
-        mImageButtonNext.setImageResource(icon);
+        mImageButtonNext.setBackgroundResource(icon);
         mImageButtonNext.setScaleType(ImageView.ScaleType.FIT_XY);
     }
 
@@ -166,16 +175,29 @@ public class ForgotPassword extends FrameLayout {
         mBackground.setBackgroundResource(color);
     }
 
-    public RelativeLayout getmButtonForgot() {
-        return mButtonForgot;
-    }
-
-    public void setmButtonForgot(RelativeLayout mButtonForgot) {
-        this.mButtonForgot = mButtonForgot;
-    }
-
-   public String getEmailText(){
-       return mEmail.getText().toString();
+   public void sendRequestForgotPassword(Context context,String mainUrl,String urlForgot) {
+       mButtonForgot.setOnClickListener(new OnClickListener() {
+           @Override
+           public void onClick(View v) {
+               mProgressDialog = new ProgressDialog(context);
+               mProgressDialog.setMessage("Loading...");
+               mProgressDialog.show();
+               if (!android.util.Patterns.EMAIL_ADDRESS.matcher(mEmail.getText().toString()).matches()) {
+                    Toast.makeText(context,"Please enter a valid email adress", Toast.LENGTH_SHORT).show();
+                    mProgressDialog.dismiss();
+                } else {
+                    RestAPI api = RestAPIBuilder.buildRetrofitService(mainUrl);
+                    mGetPostSubscription = NetworkRequest.performAsyncRequest(api.requestForgot(urlForgot,mEmail.getText().toString()), users -> {
+                        Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show();
+                        mProgressDialog.dismiss();
+                    }, throwable -> {
+                        Toast.makeText(context, throwable.getMessage() + "", Toast.LENGTH_SHORT).show();
+                        mProgressDialog.dismiss();
+                    });
+                }
+            }
+       });
    }
+
 
 }
