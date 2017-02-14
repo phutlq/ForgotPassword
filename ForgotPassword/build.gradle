@@ -1,17 +1,17 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
-// gra
+apply plugin: 'com.jfrog.bintray'
 apply plugin: 'me.tatarka.retrolambda'
 
-version = "0.0.1"
+version = "1.0.0"
 
 android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
 
-//    lintOptions {
-//        abortOnError false
-//    }
+    lintOptions {
+        abortOnError false
+    }
 
     defaultConfig {
         minSdkVersion 15
@@ -19,6 +19,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
     }
     buildTypes {
         release {
@@ -26,6 +27,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -47,34 +49,88 @@ dependencies {
     compile 'com.android.support:appcompat-v7:25.1.0'
     testCompile 'junit:junit:4.12'
 }
-//project.afterEvaluate {
-//    task bintrayUpload(group: "publishing", overwrite: true) {
-//        dependsOn subprojects.bintrayUpload
-//    }
-//}
 
-ext {
-    bintrayRepo = 'ForgotPassword'
-    bintrayName = 'forgotpassword'
+def siteUrl = 'https://github.com/phutran512/ForgotPassword'      // Homepage URL of the library
+def gitUrl = 'https://github.com/phutran512/ForgotPassword.git'   // Git repository URL
+group = "com.github.phutran512"                                          // Maven Group ID for the artifact
 
-    publishedGroupId = 'com.github.phutlq'
-    libraryName = 'ForgotPassword'
-    artifact = 'forgotpassword'
+install {
+    repositories.mavenInstaller {
+        // This generates POM.xml with proper parameters
+        pom {
+            project {
+                packaging 'aar'
 
-    libraryDescription = 'Forgot password library'
+                // Add your description here
+                name 'forgotpassword' // TODO
+                description = 'Forgot password library' // TODO
+                url siteUrl
 
-    siteUrl = 'https://github.com/phutlq/ForgotPassword'
-    gitUrl = 'https://github.com/phutlq/ForgotPassword.git'
-
-    libraryVersion = '0.0.1'
-
-    developerId = 'pp512'
-    developerName = 'PhuTLQ'
-    developerEmail = 'phutlq@greenglobal.vn'
-
-    licenseName = 'The Apache Software License, Version 2.0'
-    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-    allLicenses = ["Apache-2.0"]
+                // Set your license
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id 'pp' // TODO
+                        name 'PhuTLQ' // TODO
+                        email 'phutlq@greenglobal.vn' // TODO
+                    }
+                }
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+    }
 }
 
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
 
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+// https://github.com/bintray/gradle-bintray-plugin
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+
+    configurations = ['archives']
+    pkg {
+        repo = "forgotpassword"
+        // it is the name that appears in bintray when logged
+        name = "forgotpassword" // TODO
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["Apache-2.0"]
+        publish = true
+        version {
+            gpg {
+                sign = true //Determines whether to GPG sign the files. The default is false
+                passphrase = properties.getProperty("bintray.gpg.password") //Optional. The passphrase for GPG signing'
+            }
+        }
+    }
+}
